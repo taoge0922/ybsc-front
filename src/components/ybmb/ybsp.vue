@@ -6,7 +6,7 @@
     <div class="con_sear"><!--查询区-->
       <el-form class="demo-form-inline" :inline="true" :model="searchForm" size="mini" style="margin-top: 10px;">
         <el-form-item>
-          <el-input v-model="searchForm.codeAndName" placeholder="模板名称/代码"></el-input>
+          <el-input v-model="searchForm.goodsname" placeholder="商品名称"></el-input>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="searchTable">查询</el-button>
@@ -25,44 +25,21 @@
         :header-row-style="{height:'30px'}"
         stripe
       >
-        <el-table-column
-          label="序号"
-          type="index"
-          width="50">
-        </el-table-column>
-        <el-table-column
-          property="ybcode"
-          label="模板代码"
-        >
-        </el-table-column>
-        <el-table-column
-          property="ybname"
-          label="模板名称"
-        >
-        </el-table-column>
-        <el-table-column
-          property="cuser"
-          label="创建人"
-        >
-        </el-table-column>
-        <el-table-column
-          property="staus"
-          label="状态"
-        >
+        <el-table-column label="序号" type="index" width="50"></el-table-column>
+        <el-table-column property="ybname"  label="模板名称"></el-table-column>
+        <el-table-column property="ybcode"  label="商品名称"></el-table-column>
+        <el-table-column property="cuser"  label="当前数量"></el-table-column>
+        <el-table-column property="cuser"  label="价格"></el-table-column>
+        <el-table-column property="cuser"  label="创建人"></el-table-column>
+        <el-table-column property="staus"  label="状态">
           <template  slot-scope="scope">
             <span style="font-size: 13px;" v-if="scope.row.staus+''=='0'">启用</span>
             <span style="font-size: 13px;" v-if="scope.row.staus+''=='1'">停用</span>
           </template>
         </el-table-column>
-        <el-table-column
-          property="cdate"
-          label="创建日期"
-          :formatter="dateFormater"
-        >
+        <el-table-column  property="cdate" label="创建日期"  :formatter="dateFormater">
         </el-table-column>
-        <el-table-column
-          label="操作"
-          width="240">
+        <el-table-column label="操作" width="240">
           <template slot-scope="scope">
             <el-link :underline="false" @click="changeStatus(scope.row)" v-if="scope.row.staus+''=='0'" style="font-size: 13px;margin-left: 8px;" type="primary"  round>停用</el-link>
             <el-link :underline="false" @click="changeStatus(scope.row)" v-if="scope.row.staus+''=='1'" style="font-size: 13px;margin-left: 8px;" type="primary"  round>启用</el-link>
@@ -82,21 +59,36 @@
     </div>
     <el-drawer
       :visible.sync="drawShow"
-      title="延保项目维护"
+      title="延保商品维护"
       :before-close="handleClose"
       class="simpleDrawer"
       ref="drawer"
       size="35%"
       :wrapperClosable="!drawShow">
       <el-tabs tab-position="left" style="height: 100%;font-size: 13px;" class="simpleTab">
-        <el-tab-pane label="延保维护">
+        <el-tab-pane label="商品维护">
           <div style="padding-top: 10px;height: 90%;width:98%;">
-            <el-form ref="form" :model="ybform" :rules="formrule" label-width="80px" size="mini">
-              <el-form-item label="模板编码" prop="ybcode">
-                <el-input v-model="ybform.ybcode" ref="ybcode"></el-input>
+            <el-form ref="form" :model="goodsform" :rules="formrule" label-width="80px" size="mini">
+              <el-form-item label="模板编码" prop="mbid">
+                <el-select v-model="goodsform.mbid"
+                           :remote-method="searchMb" remote
+                           filterable placeholder="请输入商品名称搜索"
+                           size="mini"
+                           :clearable=true
+                           style="width: 100%">
+                  <el-option label="请选择" value=""></el-option>
+                  <el-option v-for="item in mblist" :key="item.id" :label="item.ybname" :value="item.id">
+                  </el-option>
+                </el-select>
               </el-form-item>
-              <el-form-item label="模板名称" prop="ybname">
-                <el-input v-model="ybform.ybname"></el-input>
+              <el-form-item label="商品名称" prop="ybname">
+                <el-input v-model="goodsform.goodsname"></el-input>
+              </el-form-item>
+              <el-form-item label="商品数量" prop="ybname">
+                <el-input-number v-model="goodsform.goodsnum"></el-input-number>
+              </el-form-item>
+              <el-form-item label="商品价格" prop="ybname">
+                <el-input-number v-model="goodsform.price" :precision="2" :step="0.1"></el-input-number>
               </el-form-item>
               <el-form-item>
                 <el-button type="primary" @click="onSubmit">立即创建</el-button>
@@ -117,6 +109,11 @@
       this.searchTable();
     },
     methods:{
+      searchMb(value){
+        this.axios.get("/ybmb/remoteSearch/"+value).then(res=>{
+          this.mblist = res.data.retData;
+        });
+      },
       deleteMb(id){
         let that = this;
         this.$confirm('确认删除该条数据？', '提示', {type: 'warning'}).then(() => {
@@ -219,6 +216,7 @@
     data(){
       return{
         ybform:{},
+        goodsform:{},
         drawShow:false,
         searchForm:{},
         pageInfo:{
@@ -227,6 +225,7 @@
           pageSize:10
         },
         tableData:[],
+        mblist:[],
         formrule: {
           ybcode: [{required: true, message:'不能为空', trigger: 'blur'}],
           ybname: [{required: true, message:'不能为空', trigger: 'blur'}]
